@@ -51,9 +51,9 @@ jobs:
 
       - name: Configuration Environment‌‌...
         run: |
-          sudo apt-get install -y git wget git zip unzip curl axel
+          sudo apt-get install -y git wget git zip unzip curl axel aria2
 
-      - name: Get the SGSI tool‌‌...
+      - name: 获取GSI工具...
         run: |
           git clone --recurse-submodules https://github.com/xiaoxindada/SGSI-build-tool.git -b 11 $GITHUB_WORKSPACE/Tool-SGSI-build
 
@@ -63,11 +63,11 @@ jobs:
           sudo cp -r apps_clean $GITHUB_WORKSPACE/Tool-SGSI-build/apps_clean
           sudo chmod 777 -R $GITHUB_WORKSPACE/Tool-SGSI-build
 
-      - name: Download ROM‌‌...
+      - name: 下载ROM...
         run: |
           cd $GITHUB_WORKSPACE/Tool-SGSI-build
           mkdir ./tmp
-          wget -U "Mozilla/5.0" ${{ github.event.inputs.ROM_URL }} -O "$GITHUB_WORKSPACE/Tool-SGSI-build/tmp/${{ github.event.inputs.ZIP_NAME }}"
+          aria2c --max-concurrent-downloads=16 --max-connection-per-server=16 --split=16 --file-allocation=none ${{ github.event.inputs.ROM_URL }} -d "$GITHUB_WORKSPACE/Tool-SGSI-build/tmp/"
           echo "zip_file: $(ls "$GITHUB_WORKSPACE/Tool-SGSI-build/tmp/")"
 
       - name: Configuration tool environment...
@@ -87,26 +87,21 @@ jobs:
           ${{ github.event.inputs.OS_TYPE }}
           y
 
-      - name: Packing(AB)...
+      - name: 打包(AB)...
         if: ${{ github.event.inputs.SGSI_TYPE }} == 'AB' || ${{ github.event.inputs.SGSI_TYPE }} == 'BOTH'
         run: |
           cd $GITHUB_WORKSPACE/Tool-SGSI-build
           pwd
           zip -r AB_${{ github.event.inputs.REPACK_NAME }} SGSI/*
           ls "AB_${{ github.event.inputs.REPACK_NAME }}"
-
           ls
-
           mkdir upload_ab
-
           ls upload_ab
-
           if [ $(ls -l AB_${{ github.event.inputs.REPACK_NAME }} | awk '{print $5}') -gt 2147483647 ]; then tar cvzpf - AB_${{ github.event.inputs.REPACK_NAME }} | split -d -b 1024m - upload_ab/AB_${{ github.event.inputs.REPACK_NAME }}; else mv AB_${{ github.event.inputs.REPACK_NAME }} upload_ab/AB_${{ github.event.inputs.REPACK_NAME }}; fi
-
           ls upload_ab
 
 
-      - name: Make A-only type GSI‌‌...
+      - name: 制作 A-only 样式 GSI‌‌...
         if: ${{ github.event.inputs.SGSI_TYPE }} == 'A' || ${{ github.event.inputs.SGSI_TYPE }} == 'BOTH'
         run: |
           sudo bash $GITHUB_WORKSPACE/Tool-SGSI-build/make.sh A << EOF
@@ -116,7 +111,7 @@ jobs:
           ${{ github.event.inputs.OS_TYPE }}
           y
 
-      - name: Packing(A-only)...
+      - name: 打包(A-only)...
         if: ${{ github.event.inputs.SGSI_TYPE }} == 'A' || ${{ github.event.inputs.SGSI_TYPE }} == 'BOTH'
         run: |
           cd $GITHUB_WORKSPACE/Tool-SGSI-build
@@ -131,7 +126,7 @@ jobs:
           ls upload_aonly
 
 
-      - name: Upload to Release‌‌...
+      - name: 上传发布...
         uses: ncipollo/release-action@v1.8.0
         with:
           artifacts: "${{ github.workspace }}/Tool-SGSI-build/upload_ab/*,${{ github.workspace }}/Tool-SGSI-build/upload_aonly/*"
