@@ -6,13 +6,11 @@ cd $LOCALDIR
 systemdir=$1
 
 apps_dir="
-CameraTools
 Mipay
 Browser
 MiuiVideo
 Music
 QuickSearchBox
-talkback
 "
 
 for delete_dir in $apps_dir ;do
